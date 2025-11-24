@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Search Bar</title>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+    }
+
+    .search-box {
+        width: 100%;
+        max-width: 400px;
+        margin: 40px auto;
+        display: flex;
+        align-items: center;
+        border: 2px solid #555;
+        border-radius: 40px;
+        padding: 8px 15px;
+        background: #fff;
+    }
+
+    .search-box input {
+        flex: 1;
+        border: none;
+        outline: none;
+        font-size: 16px;
+    }
+
+    .search-box button {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 30px;
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+    .search-box button:hover {
+        background: #005ec2;
+    }
+</style>
+</head>
+<body>
+
+<form action="https://www.google.com/search" method="GET">
+    <div class="search-box">
+        <input type="text" name="q" placeholder="Search..." required>
+        <button type="submit">Go</button>
+    </div>
+</form>
+
+</body>
+</html>
