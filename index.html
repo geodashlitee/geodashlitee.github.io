@@ -1,3 +1,49 @@
+<?php
+// -------------------------------------------
+// PHP PROXY EXECUTION (runs only if ?url= is set)
+// -------------------------------------------
+if (isset($_GET['url'])) {
+
+    $allowed_domains = [
+        "example.com",
+        "api.example.com"
+    ];
+
+    $url = $_GET['url'];
+
+    // Block unsafe protocols
+    if (preg_match('/^(file|php|data|glob|phar):/i', $url)) {
+        http_response_code(400);
+        echo "Unsafe protocol blocked.";
+        exit;
+    }
+
+    $parsed = parse_url($url);
+    $domain = $parsed['host'] ?? '';
+
+    if (!in_array($domain, $allowed_domains)) {
+        http_response_code(403);
+        echo "Domain is not allowed.";
+        exit;
+    }
+
+    // cURL proxy
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+    $response = curl_exec($ch);
+
+    $content_type = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+    curl_close($ch);
+
+    if ($content_type) header("Content-Type: ".$content_type);
+
+    echo $response;
+    exit; // Stop HTML from rendering
+}
+?>
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -6,7 +52,6 @@
 
 <style>
     .search-box {
-        width: 100%;
         max-width: 450px;
         margin: 40px auto;
         display: flex;
@@ -35,12 +80,14 @@
     }
 </style>
 </head>
+
 <body>
 
-<!-- Search form that sends user input to proxy.php -->
-<form action="proxy.php" method="GET">
+<h2 style="text-align:center;">PHP Proxy Search</h2>
+
+<form method="GET">
     <div class="search-box">
-        <input type="text" name="url" placeholder="Enter website URL..." required>
+        <input type="text" name="url" placeholder="Enter URL to proxy..." required>
         <button type="submit">Go</button>
     </div>
 </form>
