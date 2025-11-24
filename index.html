@@ -1,70 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Static Search</title>
-<style>
-    body {
-        font-family: Arial, sans-serif;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        margin: 0;
-        background: #f0f0f0;
-    }
-    .search-container {
-        text-align: center;
-    }
-    input[type="text"] {
-        width: 300px;
-        padding: 10px;
-        font-size: 16px;
-        border-radius: 30px;
-        border: 2px solid #444;
-        outline: none;
-    }
-    button {
-        padding: 10px 20px;
-        font-size: 16px;
-        border-radius: 30px;
-        border: none;
-        background: #0078ff;
-        color: white;
-        cursor: pointer;
-        margin-left: 10px;
-    }
-    button:hover {
-        background: #005ecc;
-    }
-    #output {
-        margin-top: 20px;
-        font-size: 14px;
-        color: #333;
-        word-break: break-all;
-    }
-</style>
+  <meta charset="UTF-8">
+  <title>Safe PHP Proxy</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; }
+    form { display: flex; gap: 0.5rem; }
+    input[type="url"] { flex: 1; padding: 0.5rem; }
+    button { padding: 0.5rem 0.8rem; }
+    .tip { color: #555; margin-top: 0.5rem; }
+    iframe { width: 100%; height: 70vh; border: 1px solid #ccc; margin-top: 1rem; }
+  </style>
 </head>
 <body>
-
-<div class="search-container">
-    <h2>Static Search Bar</h2>
-    <input type="text" id="urlInput" placeholder="Enter URL or text..." />
-    <button onclick="show()">Show</button>
-    <div id="output"></div>
-</div>
-
-<script>
-function show() {
-    const url = document.getElementById('urlInput').value;
-    if (url) {
-        // Display the URL without changing the page
-        document.getElementById('output').textContent = "You entered: " + url;
-    } else {
-        document.getElementById('output').textContent = "Please enter something!";
-    }
-}
-</script>
-
+  <h1>Safe PHP Proxy</h1>
+  <form action="proxy.php" method="GET" target="preview">
+    <input type="url" name="url" placeholder="https://example.com/path" required>
+    <button type="submit">Fetch</button>
+  </form>
+  <p class="tip">Only HTTPS URLs from whitelisted domains are allowed.</p>
+  <iframe name="preview"></iframe>
 </body>
 </html>
