@@ -1,82 +1,70 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>PHP Proxy</title>
-
+<title>Static Search</title>
 <style>
-    .search-box {
-        max-width: 450px;
-        margin: 40px auto;
+    body {
+        font-family: Arial, sans-serif;
         display: flex;
-        border: 2px solid #444;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        background: #f0f0f0;
+    }
+    .search-container {
+        text-align: center;
+    }
+    input[type="text"] {
+        width: 300px;
+        padding: 10px;
+        font-size: 16px;
         border-radius: 30px;
-        padding: 6px 15px;
-        background: #fff;
-    }
-    .search-box input {
-        flex: 1;
-        border: none;
+        border: 2px solid #444;
         outline: none;
-        font-size: 16px;
     }
-    .search-box button {
-        background: #0078ff;
-        color: #fff;
+    button {
+        padding: 10px 20px;
+        font-size: 16px;
+        border-radius: 30px;
         border: none;
-        padding: 8px 18px;
-        border-radius: 25px;
+        background: #0078ff;
+        color: white;
         cursor: pointer;
-        font-size: 16px;
+        margin-left: 10px;
     }
-    .search-box button:hover {
+    button:hover {
         background: #005ecc;
+    }
+    #output {
+        margin-top: 20px;
+        font-size: 14px;
+        color: #333;
+        word-break: break-all;
     }
 </style>
 </head>
-
 <body>
 
-<h2 style="text-align:center;">PHP Proxy</h2>
+<div class="search-container">
+    <h2>Static Search Bar</h2>
+    <input type="text" id="urlInput" placeholder="Enter URL or text..." />
+    <button onclick="show()">Show</button>
+    <div id="output"></div>
+</div>
 
-<form method="GET">
-    <div class="search-box">
-        <input type="text" name="url" placeholder="Enter full URL…" required>
-        <button type="submit">Go</button>
-    </div>
-</form>
+<script>
+function show() {
+    const url = document.getElementById('urlInput').value;
+    if (url) {
+        // Display the URL without changing the page
+        document.getElementById('output').textContent = "You entered: " + url;
+    } else {
+        document.getElementById('output').textContent = "Please enter something!";
+    }
+}
+</script>
 
 </body>
 </html>
-
-<?php
-// -----------------------------
-// PHP PROXY CODE AT THE BOTTOM
-// -----------------------------
-
-if (isset($_GET['url'])) {
-
-    $url = $_GET['url']; // DO NOT CHANGE THE URL
-
-    // Block only extremely dangerous protocols
-    if (preg_match('/^(file|php|data|glob|phar):/i', $url)) {
-        echo "Blocked unsafe protocol.";
-        exit;
-    }
-
-    // cURL fetch
-    $ch = curl_init($url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-
-    $response = curl_exec($ch);
-    $content_type = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
-    curl_close($ch);
-
-    if ($content_type) header("Content-Type: ".$content_type);
-
-    echo $response;
-    exit;
-}
-?>
