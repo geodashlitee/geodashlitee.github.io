@@ -1,60 +1,40 @@
 <?php
-// ---------------------------
-// Simple Safe PHP Proxy
-// ---------------------------
-
-// 1. Allowed target domains (VERY important for security)
-$allowed_domains = [
-    "example.com",
-    "api.example.com",
-    "your-api-here.com"
+// Whitelist of allowed endpoints (safe, controlled)
+$allowed = [
+    'example' => 'https://example.com',
+    'api1'    => 'https://api.publicapis.org/entries'
 ];
 
-// 2. Get URL from query parameter
-if (!isset($_GET['url'])) {
+// Choose which endpoint to load (?site=example)
+$site = $_GET['site'] ?? '';
+
+if (!isset($allowed[$site])) {
     http_response_code(400);
-    echo "Missing 'url' parameter.";
+    echo "Invalid or unauthorized target.";
     exit;
 }
 
-$url = $_GET['url'];
+$url = $allowed[$site];
 
-// 3. Block dangerous protocols
-if (preg_match('/^(file|php|data|glob|phar):/i', $url)) {
-    http_response_code(400);
-    echo "Blocked insecure protocol.";
+// Fetch safely with a timeout + basic input protection
+$context = stream_context_create([
+    'http' => [
+        'timeout' => 5,
+        'user_agent' => 'SimpleProxy/1.0'
+    ]
+]);
+
+$response = @file_get_contents($url, false, $context);
+
+if ($response === false) {
+    http_response_code(500);
+    echo "Failed to fetch content.";
     exit;
 }
 
-// 4. Parse domain
-$parsed = parse_url($url);
-$domain = $parsed['host'] ?? '';
-
-if (!in_array($domain, $allowed_domains)) {
-    http_response_code(403);
-    echo "Domain is not allowed.";
-    exit;
-}
-
-// 5. Initialize cURL
-$ch = curl_init($url);
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-
-// 6. Perform the request
-$response = curl_exec($ch);
-
-// 7. Set response headers
-$http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-$content_type = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
-
-curl_close($ch);
-
-http_response_code($http_code);
-if ($content_type) {
-    header("Content-Type: " . $content_type);
-}
-
-echo $response;
-?>
+// Return JSON response
+header('Content-Type: application/json');
+echo json_encode([
+    'fetched_from' => $url,
+    'data' => $response
+]);
