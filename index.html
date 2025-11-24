@@ -1,46 +1,28 @@
 <?php
-// -------------------------------------------
-// PHP PROXY EXECUTION (runs only if ?url= is set)
-// -------------------------------------------
+// If a URL is provided, proxy it exactly as-is
 if (isset($_GET['url'])) {
-
-    $allowed_domains = [
-        "example.com",
-        "api.example.com"
-    ];
 
     $url = $_GET['url'];
 
-    // Block unsafe protocols
+    // Basic security: block only extremely dangerous protocols
     if (preg_match('/^(file|php|data|glob|phar):/i', $url)) {
-        http_response_code(400);
-        echo "Unsafe protocol blocked.";
+        echo "Blocked dangerous protocol.";
         exit;
     }
 
-    $parsed = parse_url($url);
-    $domain = $parsed['host'] ?? '';
-
-    if (!in_array($domain, $allowed_domains)) {
-        http_response_code(403);
-        echo "Domain is not allowed.";
-        exit;
-    }
-
-    // cURL proxy
+    // cURL fetch
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-    $response = curl_exec($ch);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 
+    $response = curl_exec($ch);
     $content_type = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
     curl_close($ch);
 
     if ($content_type) header("Content-Type: ".$content_type);
-
     echo $response;
-    exit; // Stop HTML from rendering
+    exit;
 }
 ?>
 
@@ -79,15 +61,15 @@ if (isset($_GET['url'])) {
         background: #005ecc;
     }
 </style>
-</head>
 
+</head>
 <body>
 
-<h2 style="text-align:center;">PHP Proxy Search</h2>
+<h2 style="text-align:center;">PHP Proxy</h2>
 
 <form method="GET">
     <div class="search-box">
-        <input type="text" name="url" placeholder="Enter URL to proxy..." required>
+        <input type="text" name="url" placeholder="Enter full URL…" required>
         <button type="submit">Go</button>
     </div>
 </form>
