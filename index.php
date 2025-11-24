@@ -1,40 +1,88 @@
 <?php
-// Whitelist of allowed endpoints (safe, controlled)
-$allowed = [
-    'example' => 'https://example.com',
-    'api1'    => 'https://api.publicapis.org/entries'
+// proxy.php
+
+// 1) Configure a whitelist to prevent abuse
+$WHITELIST = [
+  'example.com',
+  'api.github.com',
+  'httpbin.org'
 ];
 
-// Choose which endpoint to load (?site=example)
-$site = $_GET['site'] ?? '';
-
-if (!isset($allowed[$site])) {
-    http_response_code(400);
-    echo "Invalid or unauthorized target.";
-    exit;
+// 2) Read and validate the URL
+$url = isset($_GET['url']) ? trim($_GET['url']) : '';
+if ($url === '') {
+  http_response_code(400);
+  echo 'Missing ?url= parameter.';
+  exit;
 }
 
-$url = $allowed[$site];
-
-// Fetch safely with a timeout + basic input protection
-$context = stream_context_create([
-    'http' => [
-        'timeout' => 5,
-        'user_agent' => 'SimpleProxy/1.0'
-    ]
-]);
-
-$response = @file_get_contents($url, false, $context);
-
-if ($response === false) {
-    http_response_code(500);
-    echo "Failed to fetch content.";
-    exit;
+if (!filter_var($url, FILTER_VALIDATE_URL)) {
+  http_response_code(400);
+  echo 'Invalid URL.';
+  exit;
 }
 
-// Return JSON response
-header('Content-Type: application/json');
-echo json_encode([
-    'fetched_from' => $url,
-    'data' => $response
+// 3) Enforce HTTPS and whitelist domain
+$parts = parse_url($url);
+$host = $parts['host'] ?? '';
+$scheme = $parts['scheme'] ?? '';
+
+if ($scheme !== 'https') {
+  http_response_code(400);
+  echo 'Only HTTPS URLs are allowed.';
+  exit;
+}
+
+$hostAllowed = in_array($host, $WHITELIST, true);
+if (!$hostAllowed) {
+  http_response_code(403);
+  echo 'Domain not allowed.';
+  exit;
+}
+
+// 4) Optional: limit path/query length
+$path = ($parts['path'] ?? '/') . (isset($parts['query']) ? '?' . $parts['query'] : '');
+if (strlen($path) > 2000) {
+  http_response_code(414);
+  echo 'Request too long.';
+  exit;
+}
+
+// 5) Fetch via cURL (GET only, no cookies forwarded)
+$ch = curl_init();
+curl_setopt_array($ch, [
+  CURLOPT_URL            => $url,
+  CURLOPT_RETURNTRANSFER => true,
+  CURLOPT_FOLLOWLOCATION => true,
+  CURLOPT_MAXREDIRS      => 3,
+  CURLOPT_CONNECTTIMEOUT => 5,
+  CURLOPT_TIMEOUT        => 10,
+  CURLOPT_SSL_VERIFYPEER => true,
+  CURLOPT_SSL_VERIFYHOST => 2,
+  // Safe default headers; do NOT forward user cookies
+  CURLOPT_HTTPHEADER     => [
+    'User-Agent: Safe-Proxy/1.0',
+    'Accept: */*'
+  ],
 ]);
+
+$responseBody = curl_exec($ch);
+$errno = curl_errno($ch);
+$contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+$httpCode = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+curl_close($ch);
+
+if ($errno) {
+  http_response_code(502);
+  echo 'Upstream fetch error.';
+  exit;
+}
+
+// 6) Pass through content type, but never set cookies
+if ($contentType) {
+  header('Content-Type: ' . $contentType);
+}
+http_response_code($httpCode);
+
+// 7) Stream body (you may add size limits)
+echo $responseBody;
